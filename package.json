@@ -1,0 +1,35 @@
+{
+  "name": "devicefingerprinting-demo",
+  "version": "1.0.0",
+  "description": "Demo de integración para A3 Device Fingerprinting con rompecabezas interactivo",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve . -p 8000",
+    "dev": "python -m http.server 8000",
+    "build": "echo 'No build process needed for static HTML'",
+    "deploy": "gh-pages -d ."
+  },
+  "keywords": [
+    "fingerprinting",
+    "device-security",
+    "a3-enterprise",
+    "demo",
+    "integration",
+    "puzzle",
+    "security"
+  ],
+  "author": "A3 Enterprise",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/A3-Enterprise/DeviceFingerprinting_Demo.git"
+  },
+  "homepage": "https://a3-enterprise.github.io/DeviceFingerprinting_Demo",
+  "devDependencies": {
+    "gh-pages": "^6.0.0",
+    "serve": "^14.2.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

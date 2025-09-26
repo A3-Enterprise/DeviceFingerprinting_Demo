@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A3 Device Fingerprinting - Demo de Integración</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔒 A3 Device Fingerprinting</h1>
+            <p>Ejemplo de integración con rompecabezas interactivo</p>
+        </header>
+        
+        <!-- Step 1: Token Input -->
+        <div class="step active" id="step1">
+            <h3>Paso 1: Configuración</h3>
+            <p>Ingresa tu token para iniciar el proceso de fingerprinting:</p>
+            <input type="text" id="tokenInput" placeholder="Ingresa tu token" class="token-input">
+            <button onclick="startFingerprinting()" class="btn-primary">Iniciar Demo</button>
+        </div>
+
+        <!-- Step 2: Puzzle -->
+        <div class="step" id="step2">
+            <h3>Paso 2: Resolver Rompecabezas</h3>
+            <p>Ordena los números del 1 al 8 mientras se captura tu huella digital:</p>
+            <div class="puzzle" id="puzzle"></div>
+            <div id="puzzleStatus"></div>
+        </div>
+
+        <!-- Step 3: Results -->
+        <div class="step" id="step3">
+            <h3>Paso 3: Análisis de Resultados</h3>
+            <button onclick="analyzeFingerprint()" id="analyzeBtn" disabled class="btn-success">
+                Analizar Huella Digital
+            </button>
+            <div id="results"></div>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="statusMessages"></div>
+
+        <!-- Integration Guide -->
+        <div class="integration-guide">
+            <h3>📋 Guía de Integración</h3>
+            <div class="code-block">
+                <h4>1. Incluir la librería:</h4>
+                <pre><code>&lt;script src="https://a3-enterprise.github.io/DeviceFingerprinting/fingerprint.js?key=TU_KEY&amp;token=TU_TOKEN"&gt;&lt;/script&gt;</code></pre>
+            </div>
+            
+            <div class="code-block">
+                <h4>2. Escuchar eventos:</h4>
+                <pre><code>window.addEventListener('fingerprintResult', (event) => {
+    if (event.detail.success) {
+        console.log('Éxito:', event.detail.result);
+    } else {
+        console.error('Error:', event.detail.error);
+    }
+});</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
