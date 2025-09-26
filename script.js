@@ -2,8 +2,8 @@
 let fingerprintData = null;
 let puzzleSolved = false;
 let currentToken = '';
-let puzzleState = [1, 2, 3, 4, 5, 6, 7, 8, 0]; // 0 = empty space
-const targetState = [1, 2, 3, 4, 5, 6, 7, 8, 0];
+let puzzleState = [3, 1, 5, 2, 6, 4]; // Shuffled numbers
+const targetState = [1, 2, 3, 4, 5, 6]; // Correct order
 
 // Utility functions
 function showStatus(message, type = 'info') {
@@ -40,15 +40,26 @@ function startFingerprinting() {
     
     // Load fingerprinting library dynamically
     const script = document.createElement('script');
-    script.src = `https://a3-enterprise.github.io/DeviceFingerprinting/fingerprint.js?key=DEMO&token=${encodeURIComponent(token)}`;
+    script.src = './lib/fingerprint.js';
     
+    console.log('🔗 Cargando librería desde:', script.src);
+    
+    // Initialize with token after loading
     script.onload = () => {
         showStatus('✅ Librería cargada exitosamente', 'success');
+        
+        // Initialize fingerprinting with token
+        if (window.__deviceFingerprint__) {
+            window.__deviceFingerprint__({ key: 'DEMO', token: token });
+        }
+        
         setupEventListeners();
         initializePuzzle();
         updateStep(1, 'completed');
         updateStep(2, 'active');
     };
+    
+
     
     script.onerror = () => {
         showStatus('❌ Error al cargar la librería de fingerprinting', 'error');
@@ -96,20 +107,11 @@ function setupEventListeners() {
 
 // Puzzle functions
 function initializePuzzle() {
-    // Start with solved state and shuffle
-    puzzleState = [...targetState];
-    
-    // Perform random valid moves to shuffle
-    for (let i = 0; i < 100; i++) {
-        const validMoves = getValidMoves();
-        if (validMoves.length > 0) {
-            const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
-            movePiece(randomMove);
-        }
-    }
+    // Shuffle the numbers
+    puzzleState = [...targetState].sort(() => Math.random() - 0.5);
     
     renderPuzzle();
-    showStatus('🧩 Rompecabezas iniciado. ¡Ordena los números!', 'info');
+    showStatus('🧩 Juego iniciado. ¡Arrastra para ordenar los números del 1 al 6!', 'info');
 }
 
 function renderPuzzle() {
@@ -117,41 +119,51 @@ function renderPuzzle() {
     puzzleDiv.innerHTML = '';
     
     puzzleState.forEach((num, index) => {
-        const piece = document.createElement('button');
-        piece.className = num === 0 ? 'puzzle-piece empty' : 'puzzle-piece';
-        piece.textContent = num === 0 ? '' : num;
-        piece.onclick = () => movePiece(index);
-        piece.setAttribute('aria-label', num === 0 ? 'Espacio vacío' : `Número ${num}`);
+        const piece = document.createElement('div');
+        piece.className = 'puzzle-piece';
+        piece.textContent = num;
+        piece.draggable = true;
+        piece.dataset.index = index;
+        piece.setAttribute('aria-label', `Número ${num}`);
+        
+        // Drag events
+        piece.addEventListener('dragstart', handleDragStart);
+        piece.addEventListener('dragover', handleDragOver);
+        piece.addEventListener('drop', handleDrop);
+        piece.addEventListener('dragend', handleDragEnd);
+        
         puzzleDiv.appendChild(piece);
     });
 
     checkPuzzleSolved();
 }
 
-function getValidMoves() {
-    const emptyIndex = puzzleState.indexOf(0);
-    const moves = [];
-    const row = Math.floor(emptyIndex / 3);
-    const col = emptyIndex % 3;
+let draggedElement = null;
 
-    // Check all four directions
-    if (row > 0) moves.push(emptyIndex - 3); // Up
-    if (row < 2) moves.push(emptyIndex + 3); // Down
-    if (col > 0) moves.push(emptyIndex - 1); // Left
-    if (col < 2) moves.push(emptyIndex + 1); // Right
-
-    return moves;
+function handleDragStart(e) {
+    draggedElement = e.target;
+    e.target.style.opacity = '0.5';
 }
 
-function movePiece(index) {
-    const emptyIndex = puzzleState.indexOf(0);
-    const validMoves = getValidMoves();
-    
-    if (validMoves.includes(index)) {
-        // Swap pieces
-        [puzzleState[emptyIndex], puzzleState[index]] = [puzzleState[index], puzzleState[emptyIndex]];
+function handleDragOver(e) {
+    e.preventDefault();
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    if (draggedElement !== e.target) {
+        const draggedIndex = parseInt(draggedElement.dataset.index);
+        const targetIndex = parseInt(e.target.dataset.index);
+        
+        // Swap elements
+        [puzzleState[draggedIndex], puzzleState[targetIndex]] = [puzzleState[targetIndex], puzzleState[draggedIndex]];
         renderPuzzle();
     }
+}
+
+function handleDragEnd(e) {
+    e.target.style.opacity = '1';
+    draggedElement = null;
 }
 
 function checkPuzzleSolved() {
@@ -160,11 +172,11 @@ function checkPuzzleSolved() {
     if (solved && !puzzleSolved) {
         puzzleSolved = true;
         document.getElementById('puzzleStatus').innerHTML = 
-            '<div class="status success">🎉 ¡Rompecabezas resuelto correctamente!</div>';
+            '<div class="status success">🎉 ¡Números ordenados correctamente!</div>';
         
         updateStep(2, 'completed');
         updateStep(3, 'active');
-        showStatus('🎯 ¡Excelente! Rompecabezas completado', 'success');
+        showStatus('🎯 ¡Excelente! Secuencia completada', 'success');
         checkCompletion();
     }
 }
@@ -202,17 +214,38 @@ async function analyzeFingerprint() {
         };
 
         // Call analysis API
-        const response = await fetch('https://dev.idfactory.me/bff/transactionFraud/fingerPrint/analyze', {
+        console.log('📤 API Request:', {
+            url: 'https://dev.idfactory.me/TransactionFraud/api/Analyze',
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(payload)
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${currentToken}`
+            }
         });
+        
+        const response = await fetch('https://dev.idfactory.me/TransactionFraud/api/Analyze', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${currentToken}`
+            },
+            body: JSON.stringify({
+                key: 'DEMO',
+                nonce: crypto.randomUUID(),
+                signedTimestamp: Date.now().toString(),
+                hash: btoa(JSON.stringify(fingerprintData)),
+                fingerprintDataBase64: btoa(JSON.stringify(fingerprintData))
+            })
+        });
+        
+        console.log('📥 API Response Status:', response.status, response.statusText);
+        console.log('📥 API Response Headers:', Object.fromEntries(response.headers.entries()));
 
         if (response.ok) {
             const result = await response.json();
+            console.log('✅ API Response Data:', result);
             
             resultsDiv.innerHTML = `
                 <div class="status success">✅ Análisis completado exitosamente</div>
@@ -223,6 +256,12 @@ async function analyzeFingerprint() {
             
             showStatus('🎉 Análisis completado con éxito', 'success');
         } else {
+            const errorText = await response.text();
+            console.error('❌ API Error Response:', {
+                status: response.status,
+                statusText: response.statusText,
+                body: errorText
+            });
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
     } catch (error) {
